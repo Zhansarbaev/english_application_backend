@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Құпиясөзді қалпына келтіру</title>
+  <link rel="icon" type="image/png" href="/password_icon.png">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .reset-form {
+      background-color: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 400px;
+    }
+
+    .reset-form h2 {
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .reset-form input {
+      width: 93%;
+      padding: 10px;
+      margin-bottom: 40px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .reset-form button {
+      width: 200px;
+      margin: 0 auto;
+      display: block;
+      padding: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+
+    .reset-form button:hover {
+      background-color: #404fb4;
+    }
+
+    .message {
+      text-align: center;
+      margin-top: 40px;
+      color: rgb(41, 88, 176);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="reset-form">
+    <h2>Құпиясөзді қалпына келтіру</h2>
+    <input type="password" id="newPassword" placeholder="Жаңа құпиясөз" required>
+    <button onclick="resetPassword()">Өзгерту</button>
+    <div id="message" class="message"></div>
+  </div>
+
+  <script>
+    // Получаем токен из URL параметра
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    if (!token) {
+      document.getElementById("message").innerText = "Токен не найден!";
+    }
+
+    // Функция для сброса пароля
+    async function resetPassword() {
+      const newPassword = document.getElementById("newPassword").value;
+      
+      if (!newPassword) {
+        document.getElementById("message").innerText = "Пожалуйста, введите новый пароль.";
+        return;
+      }
+
+      try {
+        const response = await fetch('http://127.0.0.1:8000/password/reset-password/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            token: token,  // передаваемый токен
+            new_password: newPassword  // новый пароль
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.status === 200) {
+          document.getElementById("message").innerText = "✅ Құпия сөз сәтті өзгертілді!";
+          document.getElementById("message").style.color = "green";
+        } else {
+          document.getElementById("message").innerText = "⚠️ " + data.detail;
+          document.getElementById("message").style.color = "red";
+        }
+
+      } catch (error) {
+        document.getElementById("message").innerText = "Қате орын алды: " + error;
+        document.getElementById("message").style.color = "red";
+      }
+    }
+  </script>
+
+</body>
+</html>
