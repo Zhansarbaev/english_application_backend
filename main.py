@@ -2,13 +2,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-
+  
 # 🔹 Импортируем роутеры
 from routers import reset_password
 from listening.unlock_card import router as unlock_router
 from listening.check_answer import router as check_answer_router
 from listening.podcasts_api import router as podcasts_router
 from listening.video_api import router as videos_router
+from listening.speech_to_text import router as speech_router
 
 app = FastAPI()
 
@@ -23,7 +24,8 @@ async def favicon():
 # 🔹 Добавляем CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Можно указать конкретные домены вместо "*"
+    allow_origins=["*"],
+  # Можно указать конкретные домены вместо "*"
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,6 +37,7 @@ app.include_router(unlock_router, prefix="/listening", tags=["Unlock Card"])
 app.include_router(check_answer_router, prefix="/listening", tags=["Check Answer"])
 app.include_router(podcasts_router, prefix="/listening", tags=["Podcasts"])
 app.include_router(videos_router, prefix="/listening", tags=["Videos"])
+app.include_router(speech_router, prefix="/listening", tags=["Speech"])
 
 @app.get("/")
 def root():

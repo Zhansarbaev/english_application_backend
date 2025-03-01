@@ -60,9 +60,9 @@ def create_reset_token(email: str):
 # Функция отправки email с токеном
 async def send_reset_email(email: str, token: str):
     # Замените этот URL на ваш реальный ngrok или доменный URL
-    reset_link = f"https://34ff-79-140-224-173.ngrok-free.app/password/reset-password?token={token}"
+    reset_link = f"https://dbff-79-140-224-173.ngrok-free.app/password/reset-password?token={token}"
     message = MessageSchema(
-        subject="App English қосымшасы - Аккаунтың құпиясөзін қалпына келтіру",
+        subject="QazaqLingva қосымшасы - Аккаунтың құпиясөзін қалпына келтіру",
         recipients=[email],
         body=f"Құпиясөзді қалпына келтіру үшін келесі сілтемеге өтіңіз: {reset_link}",
         subtype="html"
@@ -112,7 +112,7 @@ async def reset_password(request: ResetPasswordRequest):
 
 
 # Маршрут для отображения HTML-страницы сброса пароля (возвращает index.html)
-@router.get("/reset-password", response_class=HTMLResponse)
+@router.get("/reset-password/", response_class=HTMLResponse)
 async def reset_password_page(token: str):
     try:
         token_data = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
