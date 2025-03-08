@@ -9,10 +9,8 @@ from datetime import datetime, timedelta
 import jwt
 from fastapi.responses import FileResponse
 
-# Загружаем переменные из .env
 load_dotenv()
 
-# Настройки из .env
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
@@ -51,6 +49,9 @@ class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
 
+#JWT_SECRET_KEY=your_super_secret_key
+
+
 # Функция генерации JWT-токена (действителен 1 час)
 def create_reset_token(email: str):
     expire = datetime.utcnow() + timedelta(hours=1)
@@ -60,7 +61,7 @@ def create_reset_token(email: str):
 # Функция отправки email с токеном
 async def send_reset_email(email: str, token: str):
     # Замените этот URL на ваш реальный ngrok или доменный URL
-    reset_link = f"https://dbff-79-140-224-173.ngrok-free.app/password/reset-password?token={token}"
+    reset_link = f"https://379b-79-140-224-173.ngrok-free.app/password/reset-password?token={token}"
     message = MessageSchema(
         subject="QazaqLingva қосымшасы - Аккаунтың құпиясөзін қалпына келтіру",
         recipients=[email],
@@ -108,7 +109,6 @@ async def reset_password(request: ResetPasswordRequest):
         raise HTTPException(status_code=400, detail="Неверный токен")
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
 
 
 # Маршрут для отображения HTML-страницы сброса пароля (возвращает index.html)

@@ -1,92 +1,61 @@
 import os
-import requests
+import asyncio
 import aiohttp
-from uuid import UUID
-from langdetect import detect
+from uuid import uuid4
 from supabase import create_client
 from dotenv import load_dotenv
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, HTTPException
 
-# Загружаем переменные окружения
+
 load_dotenv()
 DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
-LISTEN_API_KEY = os.getenv("LISTEN_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-# Подключение к Supabase
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Создаем FastAPI Router
 router = APIRouter()
 
-def fetch_podcasts(user_level: str, topic: str = None):
-    """Получает подкасты из ListenNotes API по уровню пользователя."""
-    query = f"English {user_level}"
-    if topic:
-        query += f" {topic}"
-    
-    url = f"https://listen-api.listennotes.com/api/v2/search?q={query}&type=episode&language=English"
-    headers = {"X-ListenAPI-Key": LISTEN_API_KEY}
-    response = requests.get(url, headers=headers)
-    
-    if response.status_code != 200:
-        return []
-    
-    data = response.json()
-    podcasts = []
-    
-    for item in data.get("results", []):
-        try:
-            description = item.get("description_original", "")
-            language = detect(description) if description.strip() != "" else "en"
-            if language != "en":
-                continue
-        except Exception:
-            continue
-        
-        if "audio" in item and item["audio"]:
-            podcasts.append({
-                "title": item["title_original"],
-                "audio_url": item["audio"],
-                "image": item["image"],
-                "level": user_level
-            })
-    
-    return podcasts[:3]
-
 async def transcribe_audio(audio_url: str) -> str:
-    """Отправляет аудиофайл в Deepgram и получает расшифровку."""
+    """Асинхронно расшифровывает аудио через Deepgram."""
     headers = {"Authorization": f"Token {DEEPGRAM_API_KEY}"}
     params = {"model": "general", "tier": "base", "language": "en"}
     
     async with aiohttp.ClientSession() as session:
-        async with session.post("https://api.deepgram.com/v1/listen", headers=headers, params=params, data=requests.get(audio_url).content) as resp:
-            if resp.status != 200:
-                raise HTTPException(status_code=500, detail="Ошибка Deepgram API")
-            result = await resp.json()
+        async with session.get(audio_url) as audio_resp:
+            if audio_resp.status != 200:
+                raise HTTPException(status_code=500, detail=f"Ошибка загрузки аудиофайла: {await audio_resp.text()}")
+            
+            audio_data = await audio_resp.read()
+            async with session.post("https://api.deepgram.com/v1/listen", headers=headers, params=params, data=audio_data) as resp:
+                if resp.status != 200:
+                    raise HTTPException(status_code=500, detail=f"Ошибка Deepgram API: {await resp.text()}")
+                
+                result = await resp.json()
     
     return result.get("results", {}).get("channels", [{}])[0].get("alternatives", [{}])[0].get("transcript", "")
 
-@router.get("/transcribe_podcast")
-async def transcribe_podcast(user_id: UUID = Query(...), topic: str = Query(None)):
-    """Получает подкасты для пользователя и делает транскрипцию через Deepgram."""
+async def process_podcasts(user_id: str, podcasts: list, topic: str):
+    """Обрабатывает список подкастов: транскрибирует и сохраняет в Supabase."""
+    tasks = [transcribe_audio(podcast["audio_url"]) for podcast in podcasts]
+    transcripts = await asyncio.gather(*tasks)
+    
+    for podcast, transcript in zip(podcasts, transcripts):
+        supabase.from_("user_transcripts").insert({
+            "id": str(uuid4()),
+            "user_id": user_id,
+            "podcast_title": podcast["title"],
+            "transcript": transcript,
+            "topic": topic,  
+            "created_at": "now()"
+        }).execute()
+    
+    return {"message": "Транскрипции сохранены!"}
+
+@router.post("/transcribe_podcasts")
+async def transcribe_podcasts(user_id: str, topic: str, podcasts: list):
+    """Запускает транскрипцию подкастов и сохраняет в Supabase."""
     try:
-        response = supabase.from_("users_progress").select("level").eq("user_id", str(user_id)).single().execute()
-        if not response.data:
-            raise HTTPException(status_code=404, detail="Пользователь не найден")
-        user_level = response.data["level"]
-
-        podcasts = fetch_podcasts(user_level, topic)
-        if not podcasts:
-            return {"message": "Подкасты не найдены."}
-
-        transcripts = {}
-        for podcast in podcasts:
-            text = await transcribe_audio(podcast["audio_url"])
-            transcripts[podcast["title"]] = text
-
-        return {"transcripts": transcripts}
-
+        return await process_podcasts(user_id, podcasts, topic)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка транскрипции: {str(e)}")
