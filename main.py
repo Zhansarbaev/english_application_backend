@@ -10,6 +10,9 @@ from listening.check_answer import router as check_answer_router
 from listening.podcasts_api import router as podcasts_router
 from listening.video_api import router as videos_router
 from listening.speech_to_text import router as speech_router
+from reading.article import router as article_router
+from reading.article import router as article_router
+
 
 app = FastAPI()
 
@@ -38,6 +41,9 @@ app.include_router(check_answer_router, prefix="/listening", tags=["Check Answer
 app.include_router(podcasts_router, prefix="/listening", tags=["Podcasts"])
 app.include_router(videos_router, prefix="/listening", tags=["Videos"])
 app.include_router(speech_router, prefix="/listening", tags=["Speech"])
+app.include_router(article_router, prefix="/reading", tags=["Reading"])
+app.include_router(article_router, prefix="/reading", tags=["Reading"])
+
 
 @app.get("/")
 def root():
