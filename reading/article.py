@@ -15,13 +15,13 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-#  Подключения
+
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 openai.api_key = OPENAI_API_KEY
 
 router = APIRouter()
 
-# 🔹 Pydantic-модели
+# Pydantic-модели
 class TopicRequest(BaseModel):
     user_id: str
 
@@ -52,7 +52,7 @@ def get_random_unread_topics(user_id: str, level: str) -> list:
     random.shuffle(unread_topics)
     return unread_topics[:3]
 
-# Эндпоинт 1: Получить 3 темы
+# Получить 3 темы
 @router.post("/get_topics")
 async def get_topics(request: TopicRequest):
     try:
@@ -73,11 +73,11 @@ async def get_topics(request: TopicRequest):
         log_message("Ошибка в get_topics", str(e))
         raise HTTPException(status_code=500, detail=f"Ошибка сервера: {str(e)}")
 
-# Эндпоинт 2: Генерация статьи
+# Генерация статьи
 @router.post("/generate_article")
 async def generate_article(request: GenerateArticleRequest):
     try:
-        log_message("📩 Запрос на генерацию статьи", request.dict())
+        log_message("Запрос на генерацию статьи", request.dict())
 
         # Проверка — статья уже существует?
         existing_article_resp = supabase.from_("user_topics") \
@@ -136,7 +136,7 @@ async def generate_article(request: GenerateArticleRequest):
         log_message(" Ошибка в generate_article", str(e))
         raise HTTPException(status_code=500, detail=f"Ошибка сервера: {str(e)}")
 
-# Эндпоинт 3: Пометить тему как прочитанную
+# Пометить тему как прочитанную
 @router.post("/mark_as_read")
 async def mark_as_read(request: MarkAsReadRequest):
     try:
@@ -154,11 +154,11 @@ async def mark_as_read(request: MarkAsReadRequest):
         log_message("Ошибка в mark_as_read", str(e))
         raise HTTPException(status_code=500, detail=f"Ошибка сервера: {str(e)}")
 
-# 🔹 Эндпоинт 4: Получить историю прочитанного
+# Получить историю прочитанного
 @router.post("/get_history")
 async def get_history(request: HistoryRequest):
     try:
-        log_message("📩 Запрос истории прочитанных тем", request.dict())
+        log_message("Запрос истории прочитанных тем", request.dict())
 
         response = supabase.from_("user_topics") \
             .select("topic, content, read, level, updated_at") \

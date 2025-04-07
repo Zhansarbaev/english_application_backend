@@ -25,7 +25,7 @@ class EmailConfig:
     MAIL_FROM = os.getenv("MAIL_FROM")
     MAIL_PORT = int(os.getenv("MAIL_PORT", 465))
     MAIL_SERVER = os.getenv("MAIL_SERVER")
-    MAIL_STARTTLS = False  # Для Yandex обычно False
+    MAIL_STARTTLS = False  # Для Yandex False
     MAIL_SSL_TLS = True    # Используем SSL/TLS
 
 conf = ConnectionConfig(
@@ -111,7 +111,7 @@ async def reset_password(request: ResetPasswordRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-# Маршрут для отображения HTML-страницы сброса пароля (возвращает index.html)
+# Маршрут для отображения HTML-страницы сброса пароля 
 @router.get("/reset-password/", response_class=HTMLResponse)
 async def reset_password_page(token: str):
     try:
@@ -120,7 +120,7 @@ async def reset_password_page(token: str):
         if not email:
             raise HTTPException(status_code=400, detail="Неверный токен")
         
-        # Читаем содержимое файла index.html (убедитесь, что он находится в той же директории)
+        # Читаем содержимое файла index.html 
         with open("index.html", "r", encoding="utf-8") as f:
             html_content = f.read()
         return html_content

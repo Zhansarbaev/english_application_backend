@@ -5,7 +5,7 @@ from settings import conf
 async def send_test_email():
     message = MessageSchema(
         subject="Тестовое письмо от FastAPI",
-        recipients=["zhansarbaevvv@gmail.com"],  # Укажи email получателя
+        recipients=["zhansarbaevvv@gmail.com"],  
         body="Привет! Это тестовое письмо через Yandex SMTP (FastAPI).",
         subtype="html"
     )

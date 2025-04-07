@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
   
-# 🔹 Импортируем роутеры
+# Импортируем роутеры
 from routers import reset_password
 from listening.unlock_card import router as unlock_router
 from listening.check_answer import router as check_answer_router
@@ -16,15 +16,15 @@ from statistic_for_user.statistic import router as statistic_user
 
 app = FastAPI()
 
-# 🔹 Раздаём статические файлы из папки /static
+# Раздаём статические файлы из папки /static
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# 🔹 Раздаём иконку (favicon) из /static
+# Раздаём иконку (favicon) из /static
 @app.get("/password_icon.png", include_in_schema=False)
 async def favicon():
     return FileResponse("static/password_icon.png")
 
-# 🔹 Добавляем CORS Middleware
+# Добавляем CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -34,7 +34,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 🔹 Подключаем все маршруты
+# Подключаем все маршруты
 app.include_router(reset_password.router, prefix="/password", tags=["Password"])
 app.include_router(unlock_router, prefix="/listening", tags=["Unlock Card"])
 app.include_router(check_answer_router, prefix="/listening", tags=["Check Answer"])

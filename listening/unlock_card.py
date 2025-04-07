@@ -23,7 +23,7 @@ class UnlockRequest(BaseModel):
 @router.post("/unlock_card")
 async def unlock_new_card(request: UnlockRequest):
     try:
-        #  1. Получаем текущий `unlocked_level`
+        # Получаем текущий `unlocked_level`
         user_progress = supabase.from_("users_progress").select("level, unlocked_level").eq("user_id", request.user_id).single().execute()
         
         if not user_progress.data:
@@ -34,11 +34,11 @@ async def unlock_new_card(request: UnlockRequest):
 
         print(f"Пользователь: {request.user_id} | Уровень: {user_level} | Открытый уровень: {unlocked_level}")
 
-        # 2. Если `unlocked_level` уже максимальный, то не увеличиваем
+        
         if unlocked_level >= MAX_UNLOCK_LEVEL:
             return {"message": f"Сіз барлық карточкаларды аштыңыз! ({MAX_UNLOCK_LEVEL})"}
 
-        # 3. Получаем последние 3 `success`
+        # Получаются последние 3 `success`
         response = (
             supabase.from_("user_transcripts")
             .select("success")
@@ -52,11 +52,10 @@ async def unlock_new_card(request: UnlockRequest):
 
         print(f"Последние 3 `success` значения: {success_values}")
 
-        # 4. Проверяем, все ли три ответа успешные (true)
+        # Проверяем все ли три ответа успешные true
         if len(success_values) == 3 and all(success_values):
             print("Все 3 ответа верные, открываем новую карточку!")
 
-            # 5. Обновляем `unlocked_level` ТОЛЬКО если он < MAX_UNLOCK_LEVEL
             new_unlocked_level = min(unlocked_level + 1, MAX_UNLOCK_LEVEL)
 
             update_response = supabase.from_("users_progress").update({"unlocked_level": new_unlocked_level}).eq("user_id", request.user_id).execute()

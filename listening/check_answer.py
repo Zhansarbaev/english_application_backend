@@ -9,7 +9,6 @@ from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from typing import List
 
-# 🔹 Загружаем переменные окружения
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -40,11 +39,11 @@ def fix_broken_json(response_text: str) -> str:
 
 @router.post("/check_answer")
 async def check_answer(request: AnswerRequest):
-    # 1. Проверяем, есть ли 3 ответа
+    # Проверяем, есть ли 3 ответа
     if len(request.answers) != 3:
         raise HTTPException(status_code=400, detail="Нужно 3 ответа")
 
-    # 2. Получаем последние 3 транскрипции пользователя
+    # Получаем последние 3 транскрипции пользователя
     data_resp = (
         supabase.from_("user_transcripts")
         .select("id, podcast_title, transcript, topic, created_at")
@@ -82,7 +81,7 @@ async def check_answer(request: AnswerRequest):
             "Тек JSON форматында жауап бер, мысалы: {\"correct\": false, \"feedback\": \"Жауап толық емес\"}."
         )
 
-        # 3. Отправляем запрос в OpenAI
+        # Отправляем запрос в OpenAI
         try:
             gpt_response = openai.ChatCompletion.create(
                 model="gpt-4o-mini",
@@ -99,7 +98,7 @@ async def check_answer(request: AnswerRequest):
         raw_text = gpt_response["choices"][0]["message"]["content"]
         print(f"GPT raw: {raw_text}")  # Логируем реальный ответ от GPT
 
-        # 4 Пытаемся распарсить JSON
+        # Пытаемся распарсить JSON
         try:
             result = json.loads(raw_text)
         except json.JSONDecodeError:

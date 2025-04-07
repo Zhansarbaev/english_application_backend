@@ -101,7 +101,7 @@
         const data = await response.json();
 
         if (response.status === 200) {
-          document.getElementById("message").innerText = "✅ Құпия сөз сәтті өзгертілді!";
+          document.getElementById("message").innerText = "Құпия сөз сәтті өзгертілді!";
           document.getElementById("message").style.color = "green";
         } else {
           document.getElementById("message").innerText = "⚠️ " + data.detail;

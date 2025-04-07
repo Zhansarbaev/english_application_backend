@@ -19,7 +19,6 @@ openai.api_key = OPENAI_API_KEY
 df = pd.read_csv(r"C:\app_english_back\mini_llm\IELTS_Reading_Topics.csv")
 topics = df["IELTS Reading Topics"].tolist() # Преобразуем series в пандасе в лист для питона
 
-#Создаем промпт для написания статьи 
 def build_prompt(topic):
     return f"""
 You are an IELTS Reading passage generator.
