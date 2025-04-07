@@ -12,7 +12,7 @@ from listening.video_api import router as videos_router
 from listening.speech_to_text import router as speech_router
 from reading.article import router as article_router
 from reading.article import router as article_router
-
+from statistic_for_user.statistic import router as statistic_user
 
 app = FastAPI()
 
@@ -43,7 +43,7 @@ app.include_router(videos_router, prefix="/listening", tags=["Videos"])
 app.include_router(speech_router, prefix="/listening", tags=["Speech"])
 app.include_router(article_router, prefix="/reading", tags=["Reading"])
 app.include_router(article_router, prefix="/reading", tags=["Reading"])
-
+app.include_router(statistic_user, prefix="/statistic", tags=["Statistic"])
 
 @app.get("/")
 def root():
