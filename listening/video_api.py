@@ -3,6 +3,8 @@ import aiohttp
 from supabase import create_client
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Query
+import html
+
 
 load_dotenv()
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
@@ -33,13 +35,15 @@ async def fetch_youtube_videos(user_level, topic=None):
             videos = []
             for item in data.get("items", []):
                 video_id = item["id"].get("videoId")
-                title = item["snippet"].get("title", "Без названия")
+                title = html.unescape(item["snippet"].get("title", "Без названия"))
+
                 if video_id:
                     videos.append({
                         "title": title,
                         "video_url": f"https://www.youtube.com/watch?v={video_id}",
                         "level": user_level
                     })
+            print(f"[YOUTUBE VIDEO] Clean title: {title}")
             return videos
 
 @router.get("/videos")

@@ -6,6 +6,7 @@ from langdetect import detect
 from supabase import create_client
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Query
+import html
 
 
 load_dotenv()
@@ -38,8 +39,9 @@ async def fetch_podcasts(user_level, topic=None):
                 podcasts = []
                 for item in data.get("results", []):
                     try:
-                        description = item.get("description_original", "")
-                        title = item.get("title_original", "")
+                        title = html.unescape(item.get("title_original", ""))
+                        description = html.unescape(item.get("description_original", ""))
+
                         language = detect(description) if description.strip() else "en"
                         if language != "en":
                             continue
