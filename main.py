@@ -13,6 +13,7 @@ from listening.speech_to_text import router as speech_router
 from reading.article import router as article_router
 from reading.article import router as article_router
 from statistic_for_user.statistic import router as statistic_user
+from reading.google_translate import router as google_translate_router
 
 app = FastAPI()
 
@@ -44,6 +45,8 @@ app.include_router(speech_router, prefix="/listening", tags=["Speech"])
 app.include_router(article_router, prefix="/reading", tags=["Reading"])
 app.include_router(article_router, prefix="/reading", tags=["Reading"])
 app.include_router(statistic_user, prefix="/statistic", tags=["Statistic"])
+app.include_router(google_translate_router, prefix="/reading", tags=["Translate"])
+
 
 @app.get("/")
 def root():

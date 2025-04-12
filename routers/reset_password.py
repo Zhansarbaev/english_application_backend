@@ -61,7 +61,7 @@ def create_reset_token(email: str):
 # Функция отправки email с токеном
 async def send_reset_email(email: str, token: str):
     # Замените этот URL на ваш реальный ngrok или доменный URL
-    reset_link = f"https://379b-79-140-224-173.ngrok-free.app/password/reset-password?token={token}"
+    reset_link = f"https://32ba-188-124-247-168.ngrok-free.app/password/reset-password?token={token}"
     message = MessageSchema(
         subject="QazaqLingva қосымшасы - Аккаунтың құпиясөзін қалпына келтіру",
         recipients=[email],

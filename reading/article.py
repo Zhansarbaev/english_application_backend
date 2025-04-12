@@ -10,6 +10,9 @@ from dotenv import load_dotenv
 from datetime import datetime
 
 
+from typing import List
+import re
+
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -20,6 +23,9 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 openai.api_key = OPENAI_API_KEY
 
 router = APIRouter()
+
+class PrepareWordCacheRequest(BaseModel):
+    text: str
 
 # Pydantic-модели
 class TopicRequest(BaseModel):
@@ -174,4 +180,43 @@ async def get_history(request: HistoryRequest):
 
     except Exception as e:
         log_message("Ошибка в get_history", str(e))
+        raise HTTPException(status_code=500, detail=f"Ошибка сервера: {str(e)}")
+
+
+@router.post("/prepare_word_cache")
+async def prepare_word_cache(request: PrepareWordCacheRequest):
+    try:
+        text = request.text.lower()
+        log_message("Подготовка слов для кэша", text)
+
+        # 1. Извлекаем уникальные слова (латиница, минимум 2 буквы)
+        words = set(re.findall(r"\b[a-zA-Z]{2,}\b", text))
+
+        if not words:
+            return {"inserted": 0, "message": "Нет слов для добавления."}
+
+        # 2. Получаем уже существующие слова из word_translations
+        existing = supabase \
+            .from_("word_translations") \
+            .select("word") \
+            .in_("word", list(words)) \
+            .execute()
+
+        existing_words = {row["word"] for row in existing.data} if existing.data else set()
+        new_words = words - existing_words
+
+        if not new_words:
+            return {"inserted": 0, "message": "Все слова уже есть в словаре."}
+
+        # 3. Вставка новых слов без перевода
+        insert_payload = [{"word": word} for word in new_words]
+        supabase.from_("word_translations").insert(insert_payload).execute()
+
+        return {
+            "inserted": len(new_words),
+            "new_words": list(new_words)
+        }
+
+    except Exception as e:
+        log_message("Ошибка в prepare_word_cache", str(e))
         raise HTTPException(status_code=500, detail=f"Ошибка сервера: {str(e)}")
