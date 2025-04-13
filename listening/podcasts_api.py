@@ -81,7 +81,13 @@ async def transcribe_audio(audio_url: str) -> str:
                     return ""
                 
                 print(f"Аудиофайл загружен, отправка в Deepgram...")
+                content_type = audio_resp.headers.get("Content-Type", "")
+                if not content_type.startswith("audio"):
+                    print(f"⚠️ Не аудиофайл! Получен Content-Type: {content_type}")
+                    return ""
+
                 audio_data = await audio_resp.read()
+
                 
                 async with session.post("https://api.deepgram.com/v1/listen", headers=headers, params=params, data=audio_data) as resp:
                     if resp.status != 200:

@@ -11,9 +11,10 @@ from listening.podcasts_api import router as podcasts_router
 from listening.video_api import router as videos_router
 from listening.speech_to_text import router as speech_router
 from reading.article import router as article_router
-from reading.article import router as article_router
+
 from statistic_for_user.statistic import router as statistic_user
 from reading.google_translate import router as google_translate_router
+from practice.chat import router as chat_router
 
 app = FastAPI()
 
@@ -46,6 +47,7 @@ app.include_router(article_router, prefix="/reading", tags=["Reading"])
 app.include_router(article_router, prefix="/reading", tags=["Reading"])
 app.include_router(statistic_user, prefix="/statistic", tags=["Statistic"])
 app.include_router(google_translate_router, prefix="/reading", tags=["Translate"])
+app.include_router(chat_router, prefix="/practice", tags=["Chat"])
 
 
 @app.get("/")
