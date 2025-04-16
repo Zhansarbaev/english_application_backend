@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from datetime import datetime
-
+import re
 
 from typing import List
 import re
@@ -85,11 +85,13 @@ async def generate_article(request: GenerateArticleRequest):
     try:
         log_message("Запрос на генерацию статьи", request.dict())
 
+        topic = re.sub(r'\s+', ' ', request.topic.strip())
+
         # Проверка — статья уже существует?
         existing_article_resp = supabase.from_("user_topics") \
             .select("content") \
             .eq("user_id", request.user_id) \
-            .eq("topic", request.topic) \
+            .eq("topic", topic) \
             .maybe_single() \
             .execute()
 
@@ -99,14 +101,18 @@ async def generate_article(request: GenerateArticleRequest):
                 return {"article": content}
 
         # Получаем уровень пользователя
-        user_response = supabase.from_("users_progress").select("level").eq("user_id", request.user_id).maybe_single().execute()
+        user_response = supabase.from_("users_progress") \
+            .select("level") \
+            .eq("user_id", request.user_id) \
+            .maybe_single() \
+            .execute()
         if not user_response.data:
             raise HTTPException(status_code=404, detail="Пользователь не найден")
         user_level = user_response.data["level"]
 
         # Генерация статьи
         prompt = f"""
-        Write an academic IELTS Reading-style article on the topic: "{request.topic}".
+        Write an academic IELTS Reading-style article on the topic: "{topic}".
         Requirements:
         - Length: 250–300 words
         - Formal academic tone
@@ -126,10 +132,10 @@ async def generate_article(request: GenerateArticleRequest):
 
         article_text = response["choices"][0]["message"]["content"].strip()
 
-        # Сохраняем статью
+        # ✅ Вставка или обновление статьи
         supabase.from_("user_topics").upsert({
             "user_id": request.user_id,
-            "topic": request.topic,
+            "topic": topic,
             "content": article_text,
             "read": False,
             "level": user_level,
@@ -139,8 +145,9 @@ async def generate_article(request: GenerateArticleRequest):
         return {"article": article_text}
 
     except Exception as e:
-        log_message(" Ошибка в generate_article", str(e))
+        log_message("Ошибка в generate_article", str(e))
         raise HTTPException(status_code=500, detail=f"Ошибка сервера: {str(e)}")
+
 
 # Пометить тему как прочитанную
 @router.post("/mark_as_read")

@@ -3,10 +3,12 @@ import aiohttp
 from supabase import create_client
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import JSONResponse
 import html
-
+import re
 
 load_dotenv()
+
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -15,8 +17,18 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 router = APIRouter()
 
+# 🔧 Очищаем название видео от мусора и неотображаемых символов
+def clean_title(title: str) -> str:
+    title = html.unescape(title)  # Декодируем HTML сущности (&amp; -> & и т.д.)
+    
+    # Удаляем "невидимые" или "мусорные" символы, кроме emoji и ASCII
+    title = re.sub(r'[^\x00-\x7F\u1F300-\u1F6FF\u2600-\u26FF]+', '', title)
+
+    return title.strip()
+
+
+# 🔍 Получение видео с YouTube API
 async def fetch_youtube_videos(user_level, topic=None):
-    """Асинхронно получает видео с YouTube API."""
     query = f"English listening {user_level}"
     if topic:
         query += f" {topic}"
@@ -35,7 +47,8 @@ async def fetch_youtube_videos(user_level, topic=None):
             videos = []
             for item in data.get("items", []):
                 video_id = item["id"].get("videoId")
-                title = html.unescape(item["snippet"].get("title", "Без названия"))
+                raw_title = item["snippet"].get("title", "Без названия")
+                title = clean_title(raw_title)
 
                 if video_id:
                     videos.append({
@@ -43,12 +56,12 @@ async def fetch_youtube_videos(user_level, topic=None):
                         "video_url": f"https://www.youtube.com/watch?v={video_id}",
                         "level": user_level
                     })
-            print(f"[YOUTUBE VIDEO] Clean title: {title}")
             return videos
 
+
+# 🔗 GET /videos
 @router.get("/videos")
 async def get_videos(user_id: str, topic: str = Query(None)):
-    """Получает обучающие видео на основе уровня пользователя."""
     try:
         if not user_id:
             raise HTTPException(status_code=400, detail="user_id обязателен")
@@ -61,8 +74,9 @@ async def get_videos(user_id: str, topic: str = Query(None)):
         videos = await fetch_youtube_videos(user_level, topic)
         
         if not videos:
-            return {"message": "Видео не найдены. Попробуйте изменить тему.", "videos": []}
+            return JSONResponse(content={"videos": [], "message": "Видео не найдены. Попробуйте изменить тему."}, media_type="application/json; charset=utf-8")
         
-        return {"videos": videos}
+        return JSONResponse(content={"videos": videos}, media_type="application/json; charset=utf-8")
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка сервера: {str(e)}")
