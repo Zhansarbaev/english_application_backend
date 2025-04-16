@@ -59,8 +59,9 @@ async def check_answer(request: AnswerRequest):
         for item in data_resp.data
     ]
 
-    if len(transcripts) < 3:
-        raise HTTPException(status_code=404, detail="Нет 3 подкастов по теме")
+    if len(transcripts) == 0:
+        raise HTTPException(status_code=404, detail="Нет ни одного подкаста по теме")
+
 
     evaluation_results = []
 
@@ -68,18 +69,33 @@ async def check_answer(request: AnswerRequest):
         transcript_id, podcast_title, transcript = transcripts[i]
         answer = request.answers[i]
 
+        print(f"\n--- Проверка ответа #{i+1} ---")
+        print(f"[{i}] transcript_id: {transcript_id}")
+        print(f"[{i}] podcast_title: {podcast_title}")
+        print(f"[{i}] user_answer: {answer}")
+        
+
+
         # Строгий Prompt для OpenAI (только JSON)
         system_prompt = (
             "Сен тек JSON форматында жауап беретін көмекшісің. "
             "Қазақ тілінде сөйлейсің. Артық мәтін немесе түсініктеме жазба. "
-            "JSON форматы: {\"correct\": true/false, \"feedback\": \"...\"}."
-            "Егер JSON бере алмасаң, осылай қайтар: {\"correct\": false, \"feedback\": \"\"}."
+            "Тек JSON форматында жауап қайтар. "
+            "JSON форматы: {\"correct\": true/false, \"feedback\": \"...\"}.\n"
+            "feedback ішінде пайдаланушы жауабы неге дұрыс емес екенін түсіндіріп, "
+            "подкаст мазмұнына негізделген кішкентай подсказка бер.\n"
+        "Егер JSON бере алмасаң, осы форматта қайтар: {\"correct\": false, \"feedback\": \"\"}."
         )
+
         user_prompt = (
+            f"Подкаст мәтіні:\n{transcript[:1000]}\n\n"  # максимум 1000 символов, чтоб токены не съесть
             f"Пайдаланушы жауабы: {answer}\n"
             "Осы жауап дұрыс па, әлде толық емес пе? "
-            "Тек JSON форматында жауап бер, мысалы: {\"correct\": false, \"feedback\": \"Жауап толық емес\"}."
+            "JSON форматында жауап бер: {\"correct\": false, \"feedback\": \"Жауап толық емес. Мысалы, ...\"}"
         )
+
+        print(f"[{i}] system_prompt: {system_prompt[:100]}...")
+
 
         # Отправляем запрос в OpenAI
         try:
@@ -114,6 +130,8 @@ async def check_answer(request: AnswerRequest):
 
         correct = result.get("correct", False)
         feedback = result.get("feedback", "")
+        print(f"[{i}] Parsed result => correct: {correct}, feedback: {feedback}")
+
 
         # Обновляем `success` ТОЛЬКО у последних 3 записей
         supabase.from_("user_transcripts").update({"success": correct}).eq("id", transcript_id).execute()
