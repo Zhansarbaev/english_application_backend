@@ -11,3 +11,8 @@ supabase==0.2.0
 python-dotenv==0.19.0
 tqdm==4.61.0
 uuid==1.30
+httpx==0.23.0                
+python-multipart==0.0.5        
+slowapi==0.1.9                 
+python-jose[cryptography]==3.3.0 
+aiofiles==0.7.0                

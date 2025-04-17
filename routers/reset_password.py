@@ -8,10 +8,21 @@ from supabase import create_client, Client
 from datetime import datetime, timedelta
 import jwt
 from fastapi.responses import FileResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from starlette.requests import Request 
 
-from slowapi.extension import limiter
+from slowapi import Limiter
 
-from fastapi import Request
+# Создаем экземпляр лимитера
+limiter = Limiter(key_func=get_remote_address)
+
+
+
+
+
+
 
 
 
@@ -79,14 +90,15 @@ async def send_reset_email(email: str, token: str):
 
 # Маршрут для запроса сброса пароля (отправка email)
 @router.post("/forgot/")
-@limiter.limit("5/minute")  # ⬅ Лимит 5 запросов в минуту
-async def forgot_password(request: ForgotPasswordRequest, req: Request):  # ⬅ Добавь req
-    email = request.email
+@limiter.limit("5/minute")
+async def forgot_password(request: Request, forgot_request: ForgotPasswordRequest):  # исправили параметр request
+    email = forgot_request.email
     if not email:
-        raise HTTPException(status_code=400, detail="Email міндетті")
+        raise HTTPException(status_code=400, detail="Email обязателен")
     token = create_reset_token(email)
     await send_reset_email(email, token)
-    return {"message": "Егер мұндай email тіркелсе, сілтеме жіберілді"}
+    return {"message": "Если такой email существует, ссылка была отправлена"}
+
 
 
 # Маршрут для изменения пароля (обновление в Supabase)
