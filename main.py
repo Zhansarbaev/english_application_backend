@@ -16,7 +16,32 @@ from statistic_for_user.statistic import router as statistic_user
 from reading.google_translate import router as google_translate_router
 from practice.chat import router as chat_router
 
+
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.errors import RateLimitExceeded
+from fastapi.responses import JSONResponse
+
+
+
+
 app = FastAPI()
+
+
+# Установлю лимит на отправку reset password для почт
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request, exc):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Сіз тым жиі сұраныс жібердіңіз. Кейінірек қайталап көріңіз."}
+    )
+
+
 
 # Раздаём статические файлы из папки /static
 app.mount("/static", StaticFiles(directory="static"), name="static")

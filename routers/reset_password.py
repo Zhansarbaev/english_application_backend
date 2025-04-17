@@ -9,6 +9,12 @@ from datetime import datetime, timedelta
 import jwt
 from fastapi.responses import FileResponse
 
+from slowapi.extension import limiter
+
+from fastapi import Request
+
+
+
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -61,7 +67,7 @@ def create_reset_token(email: str):
 # Функция отправки email с токеном
 async def send_reset_email(email: str, token: str):
     # Замените этот URL на ваш реальный ngrok или доменный URL
-    reset_link = f"https://32ba-188-124-247-168.ngrok-free.app/password/reset-password?token={token}"
+    reset_link = f"http://13.61.182.98:8000/password/reset-password?token={token}"
     message = MessageSchema(
         subject="QazaqLingva қосымшасы - Аккаунтың құпиясөзін қалпына келтіру",
         recipients=[email],
@@ -73,13 +79,15 @@ async def send_reset_email(email: str, token: str):
 
 # Маршрут для запроса сброса пароля (отправка email)
 @router.post("/forgot/")
-async def forgot_password(request: ForgotPasswordRequest):
+@limiter.limit("5/minute")  # ⬅ Лимит 5 запросов в минуту
+async def forgot_password(request: ForgotPasswordRequest, req: Request):  # ⬅ Добавь req
     email = request.email
     if not email:
         raise HTTPException(status_code=400, detail="Email міндетті")
     token = create_reset_token(email)
     await send_reset_email(email, token)
-    return {"message": "Сілтеме жіберілді"}
+    return {"message": "Егер мұндай email тіркелсе, сілтеме жіберілді"}
+
 
 # Маршрут для изменения пароля (обновление в Supabase)
 @router.post("/reset-password/")
